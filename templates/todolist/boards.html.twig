@@ -4,31 +4,33 @@
 
     <div class="boards">
 
-        <div class="boards-board-new">
-            <div class="board-new-title">
-                <a href="/logout"
-                   class="board-title-text">Выход</a>
-            </div>
+        <div class="logout">
+            <a href="/logout"
+               class="board-title-text">Выход</a>
         </div>
 
         <div class="boards-board-new">
             <div class="board-new-title">
-                <a href="/boards/create"
-                   class="board-title-text">Новая доска</a>
+                <span class="board-title-text">Новая доска</span>
             </div>
         </div>
 
-        {% for board in boards %}
+                {% for board in boards %}
 
-            <div class="board">
-                <a href="/boards/{{ board.id }}/remove" class="button button-task-del"> 🞫</a>
-                <div class="board-title">
-                    <a href="/boards/{{ board.id }}"> <span class="board-title-text">{{ board.title }}</span></a>
-                    <a href="/boards/{{ board.id }}/edit" class="button button-edit">✎ </a>
-                </div>
-            </div>
+                    <div class="board" data-board-id="{{ board.id }}">
+                        <button class="button button-task-del js-board-remove">🞫</button>
+                        <div class="board-title">
+                            <a href="/boards/{{ board.id }}">
+                                <span class="board-title-text"
+                                      data-board-title="{{ board.title }}">
+                                    {{ board.title }}
+                                </span>
+                            </a>
+                            <button class="button button-edit js-board-edit">✎</button>
+                        </div>
+                    </div>
 
-        {% endfor %}
+                {% endfor %}
     </div>
 
 {% endblock %}

@@ -3,9 +3,9 @@
 {% block body %}
 
 
-    <div class="notes">
+    <div class="notes" data-board-id="{{ board.id }}">
 
-        <div class="new-note">
+        <div class="note">
             <div class="title-new-note">
                 <a href="/boards" class="title-note-text">К списку досок</a>
             </div>
@@ -13,26 +13,30 @@
 
         <div class="new-note">
             <div class="title-new-note">
-                <a href="/boards/{{ board.id }}/task-lists/create" class="title-note-text">Новый список</a>
+                <span class="title-note-text">Новый список</span>
             </div>
         </div>
 
-
         {% for taskList in board.taskLists %}
 
-            <div class="note">
-                <a href="/task-lists/{{ taskList.id }}/task/create" class="button button-task-new">+</a>
-                <a href="/task-lists/{{ taskList.id }}/remove" class="button button-task-del">🞫</a>
+            <div class="note" data-task-list-id="{{ taskList.id }}">
+                <button class="button button-task-new js-task-create">+</button>
+                <button class="button button-task-del js-note-remove">🞫</button>
                 <div class="title-note">
-                    <span class="title-note-text">{{ taskList.title }}</span>
-                    <a href="/task-lists/{{ taskList.id }}/edit" class="button button-edit">✎</a>
+                    <span class="title-note-text"
+                          data-task-list-title="{{ taskList.title }}">
+                        {{ taskList.title }}</span>
+                    <button class="button button-edit js-task-list-edit">✎</button>
                 </div>
                 <ol class="tasks">
                     {% for task in taskList.tasks %}
-                        <li class="tasks__task {{ task.isDone ? 'done' : '' }}">
-                            <span class="tasks__task-text">{{ task.text }}</span>
-                            <a href="/tasks/{{ task.id }}/edit" class="button button-edit">✎ </a>
-                            <a href="/tasks/{{ task.id }}/remove" class="button button-tasks-remove"> 🞫</a>
+                        <li class="tasks__task {{ task.isDone ? 'done' : '' }}" data-task-id="{{ task.id }}" >
+                            <button class="button button-done js-task-done">✓</button>
+                            <span class="tasks__task-text"
+                                  data-task-text="{{ task.text }}">
+                                {{ task.text }}</span>
+                            <button class="button button-edit js-task-edit">✎</button>
+                            <button class="button button-tasks-remove js-task-remove"> 🞫</button>
                         </li>
                     {% endfor %}
                 </ol>

@@ -1,24 +1,17 @@
-let currentBoardId = 1;
+//редактирование заголовка доски
 
-function onEditBoardTitle(event) {
-    const input = event.target;
-    const title = input.value;
-    api.editBoard(currentBoardId, title)
-        .then((response) => {
-            console.log(response);
-        })
-        .catch(reason => {
-            console.error(reason);
-        });
-}
+import * as api from "../../front/src/api.js";
 
-// input.onblur = onEditBoardTitle;
+document.querySelectorAll('.js-board-edit')
+    .forEach(button => {
+        button.addEventListener('click', createBoardTitleText)
+    });
 
 // создаем кнопку редактирования
 
-function createEditButton() {
-    let editButton = document.createElement('button');
-    editButton.className = 'button edit-button';
+function createBoardEditButton() {
+    const editButton = document.createElement('button');
+    editButton.className = 'button button-edit js-board-edit';
     editButton.innerText = '✎';
 
     return editButton;
@@ -26,29 +19,33 @@ function createEditButton() {
 
 // для работы с заголовком
 
-function createEditTitleButton() {
-    let button = createEditButton();
-    button.addEventListener('click', createTitleText);
-    // saveNotes();
+function createEditBoardTitleButton() {
+    let button = createBoardEditButton();
+    button.addEventListener('click', createBoardTitleText);
 
     return button;
 }
 
-function createTitleText(event) {
+export function createBoardTitleText(event) {
     event.stopPropagation();
     let note = event.target.parentElement;
-    replaceTitleWithInput(note);
+    replaceBoardTitleWithInput(note);
 }
 
 // заменяем текущий заголовок заметки полем ввода
 
-function replaceTitleWithInput(title) {
+function replaceBoardTitleWithInput(title) {
     let titleText = title.querySelector('.board-title-text');
     let styles = window.getComputedStyle(titleText);
     let rows = (titleText.getBoundingClientRect().height / parseInt(styles.lineHeight));
     const oldTitle = titleText.innerText;
-    let input = createTitleInput(oldTitle, rows, (newTitle) => {
-        api.editBoard(1, newTitle)
+    const board = title.closest('.board');
+    const id = board.dataset.boardId;
+    let input = createBoardTitleInput(oldTitle, rows, (newTitle) => {
+        api.editBoard(id, newTitle)
+            .then((response) => {
+                console.log(response);
+            })
             .catch((reason) => {
                 console.error(reason);
                 const titleText = title.querySelector('.board-title-text');
@@ -62,35 +59,37 @@ function replaceTitleWithInput(title) {
 
 // создаем новый текст заголовка
 
-function createTitleInput(text, rows, handler) {
+function createBoardTitleInput(text, rows, handler) {
     let input = createInput(text, rows);
     input.onblur = () => {
         handler(input.value);
-        replaceTitleWithInputText(input);
+        replaceBoardTitleWithInputText(input);
     };
-
 
     return input;
 }
 
-function createEditNewTitleText(text) {
+function createBoardText(text) {
+    let link = document.createElement('a');
+    link.setAttribute('href', '/boards/{{ board.id }}');
     let titleText = document.createElement('span');
-    titleText.classList.add('board-title-text');
+    titleText.className = 'board-title-text';
     titleText.innerText = text.trim();
 
-    return titleText;
+    link.appendChild(titleText);
+
+    return link;
 }
 
-function replaceTitleWithInputText(input) {
+function replaceBoardTitleWithInputText(input) {
     let newText = input.value;
     let title = input.parentElement;
     if (newText.trim() === '') {
         title.closest('.board').remove();
-        }
-    else {
+    } else {
         title.innerHTML = '';
-        title.appendChild(createEditNewTitleText(newText));
-        title.appendChild(createEditTitleButton());
+        title.appendChild(createBoardText(newText));
+        title.appendChild(createEditBoardTitleButton());
     }
 }
 
@@ -105,151 +104,96 @@ function createInput(text, rows) {
     return input;
 }
 
-// добавляем кнопку удаления доски
-
-let notes = document.querySelectorAll('.board');
-
-for (let button of notes) {
-    button.appendChild(createDelButton());
-}
-
-// добавляет новую заметку
-
-function createNewNote() {
+//добавление новой доски
+function createNewBoard() {
     let newNote = document.querySelector('.boards-board-new');
     let divNote = document.createElement('div');
-    let color = replaceNoteColor();
+    // let color = replaceNoteColor();
 
     divNote.classList.add('board');
-    divNote.classList.toggle(color);
+    // divNote.classList.toggle(color);
 
     newNote.after(divNote);
-    divNote.append(createDelButton());
+    divNote.append(createBoardButtonRemove());
 
-// добавляем заголовок новой заметки
+// добавляем заголовок доски
+
     let titleNote = document.createElement('div');
     titleNote.classList.add('board-title');
-    let titleInput = createTitleInput('', 1, () => {
-        api.saveBoards();
+
+    let titleInput = createBoardTitleInput('', 1, (title) => {
+        api.createBoard(title)
+            .then((response) => {
+                return response.json();
+            })
+            .then((data) => {
+                divNote.dataset.boardId = data.data.boardId;
+            })
+            .catch((reason) => {
+                console.log(reason);
+            });
     });
+
     titleNote.appendChild(titleInput);
     divNote.appendChild(titleNote);
 
     titleInput.focus();
 }
 
-// добавление новой заметки
+// добавление новой доски
 
-function createNoteButton() {
-    let newNoteButton = document.querySelector('.boards-board-new');
-    newNoteButton.onclick = function (event) {
-        let note = event.target.parentElement;
-        createNewNote(note);
-    }
-
-    return newNoteButton;
+function createBoardButton(event) {
+    let newBoardButton = document.querySelector('.boards-board-new');
+    newBoardButton.addEventListener('click', createNewBoard)
 }
 
-createNoteButton();
+createBoardButton();
 
-// цвет новой заметки
-
-function replaceNoteColor() {
-    let colors = [
-        'board--indianred',
-        'board--lavender',
-        'board--antiquewhite',
-        'board--teal',
-    ];
-
-    let randomIndex = Math.floor(Math.random() * colors.length);
-
-    return colors[randomIndex];
-}
-
-// кнопка удаления заметки
-
-function createDelButton() {
-    let createDelButton = document.createElement('button');
-    createDelButton.className = 'button button-task-del';
-    createDelButton.innerText = '🞫';
-    createDelButton.onclick = function () {
-        createDelButton.parentElement.remove();
-
-        api.deleteBoard(1, title);
-    }
-
-    return createDelButton;
-}
-
-//создание массива объектов
-
-function createTodos() {
-    let todoList = [];
-    let todos = document.querySelectorAll('.board');
-
-    for (const todo of todos) {
-        const note = {
-            color: todo.classList[1],
-            title: todo.querySelector('.board-title-text').innerText.trim()
-        }
-        todoList.push(note);
-    }
-
-    return todoList;
-}
-
-//сохранение бордов в JSON
-
-// function saveNotes () {
-//     localStorage.setItem('todos', JSON.stringify(createTodos()));
+// // цвет новой доски
+//
+// function replaceNoteColor() {
+//     let colors = [
+//         'board--indianred',
+//         'board--lavender',
+//         'board--antiquewhite',
+//         'board--teal',
+//     ];
+//
+//     let randomIndex = Math.floor(Math.random() * colors.length);
+//
+//     return colors[randomIndex];
 // }
 
-let saveBoard;
-if (saveBoard) {
-    saveBoard.forEach();
+//отрисовка кнопки удаления доски и удаление доски сразу после создания
+
+function createBoardButtonRemove() {
+    let createButtonRemove = document.createElement('button');
+    createButtonRemove.className = 'button button-task-del js-board-remove';
+    createButtonRemove.innerText = '🞫';
+    createButtonRemove.addEventListener('click', onBoardRemove);
+
+    return createButtonRemove;
 }
 
-// let saveBoard;
-// if (saveBoard) {
-//     saveBoard.forEach(loadNote);
-// }
+//удаление доски
 
-//загрузка бордов из JSON
+document.querySelectorAll('.js-board-remove')
+    .forEach(button => {
+        button.addEventListener('click', onBoardRemove)
+    });
 
-let savedNotes = JSON.parse(localStorage.getItem('todos'));
-if (savedNotes) {
-    savedNotes.forEach(loadNote);
-}
-
-// загрузка из localstorage
-
-function loadNote(note) {
-
-    // создаем заметку
-    let newNote = document.querySelector('.boards-board-new');
-    let divNote = document.createElement('div');
-
-    // подгружаем цвет заметки
-    divNote.classList.add('note');
-    divNote.classList.toggle(note.color);
-
-    // добавляем заголовок заметки
-    let titleNote = document.createElement('div');
-    titleNote.classList.add('board-title');
-
-    let titleText = createEditNewTitleText(note.title);
-    titleNote.appendChild(titleText);
-    titleNote.append(createEditTitleButtonToLocal())
-
-    newNote.after(divNote);
-    divNote.append(createDelButton());
-    divNote.appendChild(titleNote);
-}
-
-function createEditTitleButtonToLocal() {
-    let button = createEditButton();
-    button.addEventListener('click', createTitleText);
-
-    return button;
+function onBoardRemove(event) {
+    const button = event.target;
+    const board = button.closest('.board');
+    const id = board.dataset.boardId;
+    window.api
+        .removeBoard(id)
+        .then(response => {
+            if (!response.ok) {
+            }
+        })
+        .catch(reason => {
+            console.error(reason);
+        });
+    board.remove();
 }

@@ -17,65 +17,78 @@ class TaskListController extends AbstractController
         TaskListRepository $taskListRepository,
         BoardRepository    $boardRepository,
         Request            $request
-    )
+    ): Response
     {
         $boardId = $request->get('boardId');
         $board = $boardRepository->find($boardId);
 
-        $this->denyAccessUnlessGranted('edit', $board);
-
-        $taskListId = (int)$request->get('taskListId');
-        if ($taskListId === 0) {
-            $taskList = new TaskList();
-        } else {
-            $taskList = $taskListRepository->find($taskListId);
-        }
+        $taskList = new TaskList();
 
         $taskList->setBoard($board);
         $taskList->setTitle($request->get('title'));
         $taskListRepository->add($taskList, true);
+        $taskListId = $taskList->getId();
 
-        return $this->redirect("/boards/{$boardId}");
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'boardId' => $boardId,
+                'taskListId' => $taskListId,
+            ]],
+            200, [], ['groups' => ['taskLists']]);
     }
 
-    #[Route("/boards/{boardId}/task-lists/create", methods: 'GET')]
-    public function create(
-        BoardRepository $boardRepository,
-        int             $boardId
+    #[Route("/task-lists/{id}", methods: 'GET')]
+    public function getTaskList(
+        TaskListRepository $taskListRepository,
+        Request         $request,
     )
     {
-        $board = $boardRepository->find($boardId);
+        $id = $request->get('id');
+        $taskList = $taskListRepository->find($id);
 
-        $this->denyAccessUnlessGranted('edit', $board);
+        $this->denyAccessUnlessGranted('view', $taskList->getBoard());
 
-        return $this->render('todolist/task-list-edit.html.twig',
-            [
-                'taskListId' => 0,
-                'boardId' => $board->getId(),
-                'title' => ""
-            ]);
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'taskList' => $taskList,
+            ]],
+            200, [], ['groups' => ['taskList']]
+        );
     }
 
-    #[Route("/task-lists/{taskListId}/edit", methods: 'GET')]
+    #[Route("/task-lists/{taskListId}", methods: 'PUT')]
     public function editTaskList(
         TaskListRepository $taskListRepository,
         int                $taskListId,
+        Request            $request
     ): Response
     {
         $taskList = $taskListRepository->find($taskListId);
+
         $board = $taskList->getBoard();
+
+        $taskList->setTitle($request->get('title'));
+        $taskListRepository->add($taskList, true);
 
         $this->denyAccessUnlessGranted('edit', $board);
 
-        return $this->render('todolist/task-list-edit.html.twig',
-            [
-                'boardId' => $board->getId(),
-                'taskListId' => $taskList->getId(),
-                'title' => $taskList->getTitle()
-            ]);
+        $boardId = $taskList->getBoard()->getId();
+
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'boardId' => $boardId,
+                'taskListId' => $taskListId,
+                'title' => $taskList->getTitle(),
+            ]],
+            200, [], ['groups' => ['taskLists', 'taskList']]
+
+        );
     }
 
-    #[Route("/task-lists/{taskListId}/remove")]
+    #[Route("/task-lists/{taskListId}", methods: 'DELETE')]
     public function removeTaskLists(
         TaskListRepository $taskListRepository,
         int                $taskListId,
@@ -83,12 +96,15 @@ class TaskListController extends AbstractController
     {
         $taskList = $taskListRepository->find($taskListId);
 
+        if ($taskList === null) {
+            throw new NotFoundHttpException();
+        }
+
         $this->denyAccessUnlessGranted('edit', $taskList->getBoard());
 
-        $boardId = $taskList->getBoard()->getId();
         $taskListRepository->remove($taskList, true);
 
-        return $this->redirect("/boards/{$boardId}");
+        return $this->json(['status' => 'ok']);
     }
 
 }

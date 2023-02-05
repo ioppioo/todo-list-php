@@ -8,30 +8,35 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[Groups(['user'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private $id;
 
+    #[Groups(['user'])]
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private $login;
 
+    #[Groups(['user'])]
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private $email;
 
+    #[Groups(['user'])]
     #[ORM\Column(type: 'json')]
     private $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column (type: 'string')]
+    #[Ignore]
     private $password;
 
+    #[Groups(['boards'])]
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Board::class, orphanRemoval: true)]
     private Collection $boards;
 

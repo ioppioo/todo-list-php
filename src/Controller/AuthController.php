@@ -19,11 +19,13 @@ class AuthController extends AbstractController
         $lastUsername = $authenticationUtils->getLastUsername();
         $error = $authenticationUtils->getLastAuthenticationError();
 
-        return $this->render('auth/login.html.twig', [
-            'login' => $lastUsername,
+        return $this->json([
+            'status' => 'ok',
             'error' => $error,
-            'message' => null,
-        ]);
+            'data' => [
+                'user' => $this->getUser(),
+            ]
+        ], 200, [], ['groups' => ['user']]);
     }
 
     #[Route('/signup')]
@@ -43,10 +45,27 @@ class AuthController extends AbstractController
             $email = $request->get('email');
             $this->addFlash('success', "Регистрация завершена! Мы отправили письмо на адрес $email.");
 
-            return $this->redirect('/login');
+            return $this->json([
+                'status' => 'ok',
+                'data' => [
+                    'user' => $user,
+                ]
+            ], 200, [], ['groups' => ['user']]);
         }
 
-        return $this->render('auth/signup.html.twig');
+        return $this->json([
+            'status' => 'ok',
+        ]);
     }
 
+    #[Route('/me')]
+    public function me()
+    {
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'user' => $this->getUser(),
+            ]
+        ], 200, [], ['groups' => ['user']]);
+    }
 }

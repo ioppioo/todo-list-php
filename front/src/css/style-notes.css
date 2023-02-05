@@ -13,12 +13,17 @@
 }
 
 .notes {
+    margin: 10px;
     display: flex;
     align-items: start;
     flex-wrap: wrap;
     font-family: FiraSansExtraCondensed-ExtraLight, sans-serif;
     font-size: 18px;
     color: #2c2c2c;
+}
+
+.notes-edit {
+    flex-direction: column;
 }
 
 .note {
@@ -88,14 +93,13 @@
     color: #9d9d9d;
     font-style: italic;
     text-decoration: line-through;
-    position: relative;
+    /*position: relative;*/
 }
 
 /* стили для новой заметки */
 
 .new-note {
     background-color: #fcf6f2;
-    font-style: italic;
     width: 270px;
     border-radius: 20px;
     margin-bottom: 10px;
@@ -130,18 +134,28 @@
     text-decoration: none;
 }
 
+.button-hidden {
+    visibility: hidden;
+}
+
+.button-done {
+    left: 0px;
+    color: #9d9d9d;
+    text-decoration: none;
+}
+
 .button-tasks-remove {
     color: #9d9d9d;
-    margin-left: 20px;
+    margin-left: 10px;
 }
 
 .button-task-new {
-    font-size: 40px;
-    bottom: 0;
-    left: 223px;
+    font-size: 60px;
+    bottom: -20px;
+    left: 226px;
 }
 
-.button-task-del {
+.button-board-remove {
     font-size: 22px;
     top: 9px;
     left: 225px;

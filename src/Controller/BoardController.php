@@ -3,12 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\Board;
+use App\Entity\TaskList;
 use App\Entity\User;
 use App\Repository\BoardRepository;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Entity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+
 
 class BoardController extends AbstractController
 {
@@ -18,87 +21,94 @@ class BoardController extends AbstractController
         Request         $request
     )
     {
-        $boardId = (int)$request->get('boardId');
-        if ($boardId === 0) {
-            $board = new Board();
-        } else {
-            $board = $boardRepository->find($boardId);
-            $this->denyAccessUnlessGranted('edit', $board);
-        }
+        $board = new Board();
 
         $board->setUser($this->getUser());
         $board->setTitle($request->get('title'));
         $boardRepository->add($board, true);
+        $boardId = $board->getId();
 
-        return $this->redirect("/boards");
+        return $this->json([
+            'status' => 'ok',
+            'data' => ['boardId' => $boardId]]);
     }
 
-    #[Route("/boards/create", methods: 'GET')]
-    public function create()
-    {
-        return $this->render('todolist/boards-edit.html.twig',
-            [
-                'boardId' => 0,
-                'boardTitle' => ""
-            ]
-        );
-    }
-
-    #[Route("/boards", methods: "GET")]
+    #[Route("/boards", methods: 'GET')]
     public function getBoardsList()
     {
         /** @var User $user */
         $user = $this->getUser();
         $boards = $user->getBoards();
 
-        return $this->render('todolist/boards.html.twig',
-            [
-                'boards' => $boards
-            ]
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'boards' => $boards,
+            ]],
+            200, [], ['groups' => ['boards']]
         );
     }
 
-    #[Route("/boards/{id}", methods: "GET")]
-    public function getBoard(Board $board)
+    #[Route("/boards/{id}", methods: 'GET')]
+    public function getBoard(
+        BoardRepository $boardRepository,
+        Request         $request,
+    )
     {
+        $id = $request->get('id');
+        $board = $boardRepository->find($id);
+
         $this->denyAccessUnlessGranted('view', $board);
 
-        return $this->render(
-            'todolist/board.html.twig', [
-                'board' => $board
-            ]
+        $taskLists = $board->getTaskLists();
+
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'taskLists' => $taskLists,
+                'id' => $board->getId(),
+                'title' => $board->getTitle(),
+            ]],
+            200, [], ['groups' => ['taskLists']]
         );
     }
 
-    #[Route("/boards/{boardId}/edit", methods: "GET")]
+    #[Route("/boards/{id}", methods: 'PUT')]
     public function editBoard(
         BoardRepository $boardRepository,
-        int             $boardId
+        int             $id,
+        Request         $request
     ): Response
     {
-        $board = $boardRepository->find($boardId);
+        $board = $boardRepository->find($id);
+
+        $board->setTitle($request->get('title'));
+        $boardRepository->add($board, true);
 
         $this->denyAccessUnlessGranted('edit', $board);
 
-        return $this->render('todolist/boards-edit.html.twig',
-            [
-                'boardId' => $board->getId(),
-                'boardTitle' => $board->getTitle()
-            ]);
+        return $this->json([
+            'status' => 'ok',
+            'data' => [
+                'id' => $id,
+                'board' => $board,
+            ]],
+            200, [], ['groups' => ['boards']]
+        );
     }
 
-    #[Route("/boards/{boardId}/remove")]
+    #[Route("/boards/{id}", name: 'boards_removeBoard', methods: 'DELETE')]
     public function removeBoard(
         BoardRepository $boardRepository,
-        int             $boardId
+        int             $id
     ): Response
     {
-        $board = $boardRepository->find($boardId);
+        $board = $boardRepository->find($id);
 
         $this->denyAccessUnlessGranted('edit', $board);
 
-        $boardRepository->remove( $board, true);
+        $boardRepository->remove($board, true);
 
-        return $this->redirect('/boards');
+        return $this->json(['status' => 'ok']);
     }
 }
