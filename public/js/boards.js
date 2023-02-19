@@ -1,6 +1,6 @@
 //редактирование заголовка доски
 
-import * as api from "../../front/src/api.js";
+import * as api from "./api.js";
 
 document.querySelectorAll('.js-board-edit')
     .forEach(button => {
